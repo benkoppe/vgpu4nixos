@@ -1,6 +1,8 @@
 {
   pkgs,
   lib,
+  owner ? "VGPU-Community-Drivers",
+  repo ? "vGPU-Unlock-patcher",
   version ? "custom",
   rev,
   sha256,
@@ -55,10 +57,13 @@ pkgs.stdenv.mkDerivation {
   inherit version;
 
   src = pkgs.fetchFromGitHub {
-    owner = "VGPU-Community-Drivers";
-    repo = "vGPU-Unlock-patcher";
+    inherit
+      owner
+      repo
+      rev
+      sha256
+      ;
     fetchSubmodules = true;
-    inherit rev sha256;
   };
 
   driverSrcs = (
@@ -97,33 +102,32 @@ pkgs.stdenv.mkDerivation {
     ./fix-basedir.patch
   ];
   # TODO: use nvidia-vup vcfg instead of sed
-  installPhase =
-    ''
-      mkdir -p $out/bin
-      cp -r ./ $out
-      rm $out/nsigpatch.c
+  installPhase = ''
+    mkdir -p $out/bin
+    cp -r ./ $out
+    rm $out/nsigpatch.c
 
-      patchShebangs $out/patch.sh
-      sed -i '0,/^    vcfgclone \''${TARGET}\/vgpuConfig.xml /s//${vgpuProfileCmds}&/' $out/patch.sh
-      ln -s $out/patch.sh $out/bin/nvidia-vup
-      wrapProgram $out/bin/nvidia-vup \
-        --prefix PATH : ${lib.makeBinPath buildInputs}
+    patchShebangs $out/patch.sh
+    sed -i '0,/^    vcfgclone \''${TARGET}\/vgpuConfig.xml /s//${vgpuProfileCmds}&/' $out/patch.sh
+    ln -s $out/patch.sh $out/bin/nvidia-vup
+    wrapProgram $out/bin/nvidia-vup \
+      --prefix PATH : ${lib.makeBinPath buildInputs}
 
-      # Copy drivers
-      for i in $driverSrcs; do
-        if [[ "$i" =~ \.zip$ ]]; then
-          unzip -j $i "*."{run,exe} -d $out
-        else
-          cp $i $out/"$(stripHash "$i")"
-        fi
-      done
-      chmod 555 $out/*.run
-    ''
-    + lib.optionalString fetchGuests ''
-      # Compile nsigpatch
-      gcc -fshort-wchar ./nsigpatch.c -o $out/nsigpatch
-      ln -s $out/nsigpatch $out/bin/nsigpatch
-    '';
+    # Copy drivers
+    for i in $driverSrcs; do
+      if [[ "$i" =~ \.zip$ ]]; then
+        unzip -j $i "*."{run,exe} -d $out
+      else
+        cp $i $out/"$(stripHash "$i")"
+      fi
+    done
+    chmod 555 $out/*.run
+  ''
+  + lib.optionalString fetchGuests ''
+    # Compile nsigpatch
+    gcc -fshort-wchar ./nsigpatch.c -o $out/nsigpatch
+    ln -s $out/nsigpatch $out/bin/nsigpatch
+  '';
 
   meta.mainProgram = "nvidia-vup";
 }

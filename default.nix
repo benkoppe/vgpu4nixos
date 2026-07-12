@@ -1,5 +1,5 @@
 {
-  guest ? false
+  guest ? false,
 }:
 {
   pkgs,
@@ -11,12 +11,17 @@
 let
   vgpuCfg = config.hardware.nvidia.vgpu;
   merged = !guest && (lib.elem "nvidia" config.services.xserver.videoDrivers);
-  
-  utils = import ./utils.nix
-    {
-      inherit (config.boot.kernelPackages) kernel;
-      inherit pkgs lib guest merged vgpuCfg;
-    };
+
+  utils = import ./utils.nix {
+    inherit (config.boot.kernelPackages) kernel;
+    inherit
+      pkgs
+      lib
+      guest
+      merged
+      vgpuCfg
+      ;
+  };
 
   pref = if guest then "grid" else "vgpu";
   vgpuNixpkgsPkgs = with utils; {
@@ -85,7 +90,29 @@ let
       usePersistenced = false;
       gridVersion = "18.0";
       zipFilename = "NVIDIA-GRID-Linux-KVM-570.124.03-570.124.06-572.60.zip";
-      vgpuPatcher = null;
+      vgpuPatcher = mkVgpuPatcher {
+        owner = "benjamindoron";
+        repo = "vGPU-Unlock-Patcher";
+        version = "570.124";
+        rev = "2049bd772afed18befa58a2f8a98e5aca3f8b27c";
+
+        # Replace this after the first build reports the correct hash.
+        sha256 = lib.fakeHash;
+
+        generalVersion = "570.124.04";
+
+        # These are not fetched for a non-merged host build unless
+        # enablePatcherCmd is enabled.
+        generalSha256 = lib.fakeHash;
+
+        linuxGuest = "570.124.06";
+        linuxSha256 = "sha256-zqLM9cICZvSnTSWyvn8VMga6nTEQ0KiZqe9mFWIzKJU=";
+
+        windowsGuestFilename = "572.60_grid_win10_win11_server2022_dch_64bit_international.exe";
+        windowsSha256 = lib.fakeHash;
+
+        gridVersion = "18.0";
+      };
     };
     "${pref}_17_6" = mkVgpuDriver {
       version = "550.163.02";
@@ -255,10 +282,7 @@ in
 {
   imports = [
     # Load host- or guest-specific options and config
-    (import
-      (if guest then ./guest.nix else ./host.nix)
-      (args // { inherit utils; })
-    )
+    (import (if guest then ./guest.nix else ./host.nix) (args // { inherit utils; }))
   ];
   options = {
     hardware.nvidia.vgpu = {
@@ -343,14 +367,20 @@ in
         message = "vGPU-Unlock-patcher is not supported for vGPU version ${config.hardware.nvidia.package.version}";
       }
       {
-        assertion = (vgpuCfg.driverSource.sha256 == null -> lib.hasSuffix ".zip" (with vgpuCfg.driverSource; if name != "" then name else ".zip"));
+        assertion = (
+          vgpuCfg.driverSource.sha256 == null
+          -> lib.hasSuffix ".zip" (with vgpuCfg.driverSource; if name != "" then name else ".zip")
+        );
         message = ''
           NVIDIA vGPU driver hash is not set, but `hardware.nvidia.vgpu.driverSource.name` has an extensions that differs from .zip
           Declare `hardware.nvidia.vgpu.driverSource.sha256` or change `name` option to have .run extension at the end
         '';
       }
       {
-        assertion = (vgpuCfg.driverSource.sha256 != null -> lib.hasSuffix ".run" (with vgpuCfg.driverSource; if name != "" then name else ".run"));
+        assertion = (
+          vgpuCfg.driverSource.sha256 != null
+          -> lib.hasSuffix ".run" (with vgpuCfg.driverSource; if name != "" then name else ".run")
+        );
         message = ''
           NVIDIA vGPU driver hash is set, but `hardware.nvidia.vgpu.driverSource.name` has an extensions that differs from .run
           Remove `hardware.nvidia.vgpu.driverSource.sha256` or change `name` option to have .zip extension at the end
