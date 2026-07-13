@@ -9,6 +9,7 @@
   vgpuDriver,
   merged ? false,
   fetchGuests ? false,
+  spoofPascalAsT4 ? false,
   generalSha256,
   generalVersion,
   linuxSha256,
@@ -101,6 +102,16 @@ pkgs.stdenv.mkDerivation {
     ./binaries-in-patcher-root.patch
     ./fix-basedir.patch
   ];
+
+  postPatch = lib.optionalString spoofPascalAsT4 ''
+    substituteInPlace patches/cvgpu.c \
+      --replace-fail 'spoofed_devid = 0x1b38; // Tesla P40' \
+                     'spoofed_devid = 0x1eb8; spoofed_subsysid = 0x12a2; // Tesla T4'
+    substituteInPlace unlock/vgpu_unlock_hooks.c \
+      --replace-fail 'return 0x1b38; /* Tesla P40 */' \
+                     'return 0x1eb8; /* Tesla T4 */'
+  '';
+
   # TODO: use nvidia-vup vcfg instead of sed
   installPhase = ''
     mkdir -p $out/bin
