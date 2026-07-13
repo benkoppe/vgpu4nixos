@@ -104,11 +104,12 @@ pkgs.stdenv.mkDerivation {
   # TODO: use nvidia-vup vcfg instead of sed
   installPhase = ''
     mkdir -p $out/bin
-    cp -r ./ $out
-    rm $out/nsigpatch.c
+      cp -r ./ $out
+      rm $out/nsigpatch.c
 
-    patchShebangs $out/patch.sh
-    sed -i '0,/^    vcfgclone \''${TARGET}\/vgpuConfig.xml /s//${vgpuProfileCmds}&/' $out/patch.sh
+      chmod +x $out/patch.sh
+      patchShebangs $out/patch.sh
+      sed -i '0,/^    vcfgclone \''${TARGET}\/vgpuConfig.xml /s//${vgpuProfileCmds}&/' $out/patch.sh
     ln -s $out/patch.sh $out/bin/nvidia-vup
     wrapProgram $out/bin/nvidia-vup \
       --prefix PATH : ${lib.makeBinPath buildInputs}
