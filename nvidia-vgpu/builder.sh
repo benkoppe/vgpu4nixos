@@ -66,6 +66,9 @@ installPhase() {
 
     mkdir -p "$out/lib"
     cp -prd *.so.* "$out/lib/"
+    if [ -e libvgpucompat.so ]; then
+        install -Dm755 libvgpucompat.so "$out/lib/libvgpucompat.so"
+    fi
     if [ -d tls ]; then
         cp -prd tls "$out/lib/"
     fi
