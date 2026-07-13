@@ -96,8 +96,7 @@ let
         version = "570.124";
         rev = "2049bd772afed18befa58a2f8a98e5aca3f8b27c";
 
-        # Replace this after the first build reports the correct hash.
-        sha256 = lib.fakeHash;
+        sha256 = "sha256-qW7YVv+TE6ytn+rkXEwLcV6TJsdbuZyiXXBfcwrfCRI=";
 
         generalVersion = "570.124.04";
 
