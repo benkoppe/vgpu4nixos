@@ -195,12 +195,16 @@ installPhase() {
         )
 
         # Install the kernel module.
-        mkdir -p $bin/lib/modules/$kernelVersion/misc
+        mkdir -p "$bin/lib/modules/$kernelVersion/misc"
         # TODO: nvidia-open support
-        for i in $(find ./kernel -name '*.ko'); do
-            nuke-refs $i
-            cp $i $bin/lib/modules/$kernelVersion/misc/
-        done
+        while IFS= read -r -d "" module; do
+            nuke-refs "$module"
+            installed="$bin/lib/modules/$kernelVersion/misc/$(basename "$module")"
+            cp "$module" "$installed"
+            # Newer nixpkgs collects a companion certificate for each module.
+            # Sign after nuke-refs so the signature covers the final bytes.
+            kmodigest "$installed"
+        done < <(find ./kernel -name '*.ko' -print0)
 
         # Install application profiles.
         if [ "$useProfiles" = "1" ] && [ "$guiBundled" = "1" ]; then

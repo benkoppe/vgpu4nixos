@@ -40,6 +40,7 @@
   fetchzip,
   kernel,
   kernelModuleMakeFlags ? [ ],
+  kmodigest,
   bbe,
   perl,
   gawk,
@@ -174,6 +175,7 @@ let
 
     buildInputs = lib.optional (!guest) pciutils;
     nativeBuildInputs = [
+      kmodigest
       perl
       nukeReferences
       makeWrapper
