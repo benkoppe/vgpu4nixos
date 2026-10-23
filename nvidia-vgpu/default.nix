@@ -104,11 +104,11 @@ let
       with pkgs;
       [
         libdrm
-        xorg.libXext
-        xorg.libX11
-        xorg.libXv
-        xorg.libXrandr
-        xorg.libxcb
+        libxext
+        libx11
+        libxv
+        libxrandr
+        libxcb
         zlib
         stdenv.cc.cc
         wayland
@@ -183,8 +183,7 @@ let
       libarchive
       unzip
       jq
-      kernel.moduleBuildDependencies
-    ] ++ lib.optional (!guest) bbe;
+    ] ++ kernel.moduleBuildDependencies ++ lib.optional (!guest) bbe;
 
     disallowedReferences = [ kernel.dev ];
 
