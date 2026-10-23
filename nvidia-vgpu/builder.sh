@@ -40,6 +40,10 @@ buildPhase() {
         echo "Building linux driver against kernel: $kernel";
         # TODO: nvidia-open support
         cd kernel
+        # NVIDIA's function probes rely on pre-C23 C semantics. New GCC
+        # defaults can otherwise report missing kernel functions as present.
+        substituteInPlace conftest.sh \
+            --replace-fail 'BASE_CFLAGS="' 'BASE_CFLAGS="-std=gnu17 '
         unset src # used by the nv makefile
         make $makeFlags -j $NIX_BUILD_CORES module
 

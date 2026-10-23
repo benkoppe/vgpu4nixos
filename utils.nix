@@ -218,7 +218,8 @@ rec {
         zipSha256 = args.sha256;
       };
     in
-    pkgs.callPackage (import ./nvidia-vgpu args') {
+    # External modules must use the kernel's compiler and common make flags.
+    (pkgs.linuxPackagesFor kernel).callPackage (import ./nvidia-vgpu args') {
       inherit
         kernel
         src
